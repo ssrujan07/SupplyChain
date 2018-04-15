@@ -1,6 +1,10 @@
 create table customer;
 Alter customer add id,firstname,lastname,city,country,phone
 create table supplier;
+Alter supplier add companyname,contactname,city,country,phone,fax
 create table product;
+Alter product add id,productname,supplierid,unitprice,package,isdiscontinued
 create table order;
+Alter order add orderdate,customerid,totalamount,ordernumber;
 create table orderitem;
+Alter orderitem add id,orderid,productid,unitprice,quantity
