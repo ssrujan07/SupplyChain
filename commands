@@ -1,0 +1,6 @@
+create table customer;
+Alter customer add id,firstname,lastname,city,country,phone
+create table supplier;
+create table product;
+create table order;
+create table orderitem;
