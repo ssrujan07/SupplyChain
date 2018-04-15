@@ -1,0 +1,5 @@
+select * from customer;
+select * from supplier;
+select * from product;
+select * from order;
+select * from orderitem;
