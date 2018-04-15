@@ -1,0 +1,59 @@
+﻿import string, pymssql, cx_Oracle
+
+## Define Oracle connection - format ("username/password@TNSNAME")
+ora_conn = cx_Oracle.connect("xxxx/xxxx@XXXXX")
+ora_cursor = ora_conn.cursor()  #Allocate a cursor
+
+## Define the MSSQL server connection - format is self-explanatory
+mssql_conn = pymssql.connect(host='xxxx', user='xx',
+password='xxx', database='XXX')
+mssql_cursor = mssql_conn.cursor()  #Allocate a cursor
+
+## Truncate our destination tables
+ora_cursor.execute("truncate table test")
+mssql_cursor.execute("truncate table test")
+
+## Grab our "Source Data"
+ora_cursor.execute("""SELECT DBMS_RANDOM.STRING('P',40) field1,
+                DBMS_RANDOM.STRING('X',30) field2,
+                ROUND(DBMS_RANDOM.VALUE(1000, 9999)) field3,
+                DBMS_RANDOM.STRING('A',20) field4
+            FROM DUAL CONNECT BY LEVEL&lt;=3000""")
+
+## Transfer our cursor rows into a python list object
+ResultSet_Py_List = []  #Create an empty list
+for field1, field2, field3, field4 in ora_cursor:
+    try:   #Then populate it with the cursor results
+        ResultSet_Py_List.append((field1, field2, field3, field4))
+    except AttributeError:
+        pass
+
+
+## Quick count to see how many rows we're packin'!
+print str(len(ResultSet_Py_List)) + ' Records from Source'
+
+## Insert the list contents into Oracle, row by row...
+ora_cursor.prepare("""INSERT INTO test(field1,field2,field3,field4)
+VALUES (:field1, :field2, :field3, :field4)""")
+ora_cursor.executemany(None, ResultSet_Py_List)
+ora_conn.commit() #COMMIT that shit before it gets away!
+
+#Insert the list contents into Microsoft SQL table
+mssql_cursor.executemany("""INSERT INTO
+test (field1, field2, field3, field4)
+VALUES (%s, %s, %s, %s)""", ResultSet_Py_List)
+mssql_conn.commit()
+ora_cursor.execute("select count(*) from test")
+ora_row_count = ora_cursor.fetchone()
+print str(ora_row_count[0]) + ' Records INSERTED into Oracle table'
+
+mssql_cursor.execute("select count(*) from test")
+mssql_row_count = mssql_cursor.fetchone()
+print str(mssql_row_count[0]) + ' Records INSERTED into MSSQL table'
+
+## All done, Lars. Now lets get a drink.
+
+## We will even be nice and close the connections.
+##       Its like tipping your hat to the Database engine.
+mssql_conn.close()
+ora_conn.close()
